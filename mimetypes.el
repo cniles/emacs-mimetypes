@@ -130,9 +130,6 @@ system-provided mimetype mappings."
 	      extension
 	      (mimetypes--first-known-file mimetypes-known-files))))))
 
-
-(mimetypes-extension-to-mine "txt")
-
 (provide 'mimetypes)
 
 ;;; mimetypes.el ends here
