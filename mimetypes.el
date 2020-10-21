@@ -99,5 +99,15 @@
       (forward-line))
     (car (split-string (buffer-substring-no-properties (line-beginning-position) (line-end-position))))))
 
+(defun mimetypes-extension-to-mine (extension)
+  "Guess a mimetype from EXTENSION."
+  (cond ((eq system-type 'windows-nt) (mimetypes--find-in-registry extension))
+	((eq system-type 'ms-dos) nil)
+	((eq system-type 'cygwin) nil)
+	(t (mimetypes--find-in-file
+	    extension
+	    (mimetypes--first-known-file mimetypes-known-files)))))
+
 (provide 'mimetypes)
+
 ;;; mimetypes.el ends here
