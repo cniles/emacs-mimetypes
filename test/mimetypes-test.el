@@ -63,11 +63,28 @@
 
 (ert-deftest test-find-in-file ()
   (should (string= "text/plain"
-		   (mimetypes--find-in-file "txt" "test/one"))))
+		   (mimetypes--find-in-file "txt" "one"))))
 
 (ert-deftest test-first-known-file ()
-  (should (string= "test/one" (mimetypes--first-known-file '("test/zero" "test/one" "test/two"))))
-  (should-not (mimetypes--first-known-file '("test/zero" "test/two"))))
+  (should (string= "one" (mimetypes--first-known-file '("zero" "one" "two"))))
+  (should-not (mimetypes--first-known-file '("zero" "two"))))
+
+(ert-deftest test-find-in-list ()
+  (let ((mime-list '(("plain/foo" "foo" "f")
+		     ("plain/bar" "bar" "b"))))
+    (should-not (mimetypes--find-in-list "foo" nil))
+    (should (string= "plain/foo" (mimetypes--find-in-list "foo" mime-list)))
+    (should (string= "plain/bar" (mimetypes--find-in-list "bar" mime-list)))
+    (should (string= "plain/foo" (mimetypes--find-in-list "f" mime-list)))
+    (should (string= "plain/bar" (mimetypes--find-in-list "b" mime-list)))
+    (should-not (mimetypes--find-in-list "baz" mime-list))))
+
+(ert-deftest test-find-in-user-file ()
+  (cl-letf (((symbol-function 'mimetypes--user-file-name)
+	     (lambda () "one")))
+    (should (string= "application/jpeg"
+		     (mimetypes-extension-to-mine "jpg")))))
 
 (provide 'mimetypes-test)
+
 ;;; mimetypes-test.el ends here

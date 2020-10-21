@@ -6,7 +6,7 @@
 ;; Maintainer: Craig Niles <niles.c at gmail.com>
 ;; URL: https://github.com/cniles/emacs-mimetypes
 ;; Package-Requires: ((emacs "25.1"))
-;; Version: 0.0.1
+;; Version: 1.0
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -55,7 +55,7 @@
 	  (mimetypes--first-known-file (cdr files))))))
 
 (defun mimetypes--trim-extension (extension)
-  "Remove period/whitespace from EXTENSION."
+  "Trim period and whitespace from EXTENSION."
   (string-trim extension "[. \t\n\r]+"))
 
 (defun mimetypes--read-registry (key-name value-name)
@@ -66,7 +66,7 @@
 	nil))))
 
 (defun mimetypes--find-in-registry (extension)
-  "Search the registry for a mime type for EXTENSION."
+  "Search the registry for a MIME type for EXTENSION."
   (car (last (mimetypes--read-registry
 	      (format "HKEY_LOCAL_MACHINE\\Software\\Classes\\.%s" (mimetypes--trim-extension extension))
 	      "Content Type"))))
@@ -77,17 +77,18 @@
   (not (null (or (string= line "") (string-match "^#" line)))))
 
 (defun mimetypes--line-has-extension (line extension)
-  "Check if mime.types line LINE has a mime type for EXTENSION."
+  "Check if mime.types line LINE has a MIME type for EXTENSION."
   (not (null (seq-contains (cdr (split-string line)) extension #'string=))))
 
 (defun mimetypes--find-in-file (extension file-name)
   "Check for EXTENSION in mime.types file FILE-NAME."
-  (with-temp-buffer
-    (insert-file-contents-literally file-name)
-    (mimetypes--find-in-buffer (downcase (mimetypes--trim-extension extension)))))
+  (when (file-exists-p file-name)
+    (with-temp-buffer
+      (insert-file-contents-literally file-name)
+      (mimetypes--find-in-buffer (downcase (mimetypes--trim-extension extension))))))
 
 (defun mimetypes--find-in-buffer (extension)
-  "Check for EXTENSION in mime.types content in the current buffer."
+  "Check for EXTENSION in mime.types file content in the current buffer."
   (save-excursion
     (goto-char (point-min))
     (while
@@ -99,14 +100,38 @@
       (forward-line))
     (car (split-string (buffer-substring-no-properties (line-beginning-position) (line-end-position))))))
 
-(defun mimetypes-extension-to-mine (extension)
-  "Guess a mimetype from EXTENSION."
-  (cond ((eq system-type 'windows-nt) (mimetypes--find-in-registry extension))
-	((eq system-type 'ms-dos) nil)
-	((eq system-type 'cygwin) nil)
-	(t (mimetypes--find-in-file
-	    extension
-	    (mimetypes--first-known-file mimetypes-known-files)))))
+(defun mimetypes--find-in-list (extension mime-list)
+  "Find EXTENSION in list MIME-LIST.
+Each element of MIME-LIST must be a list of strings of the form:
+\(mimetype ext1 ext2 ... extn)."
+  (let ((extension (mimetypes--trim-extension extension))
+	(type-list (car mime-list)))
+    (if (null mime-list) nil
+      (if (seq-contains (cdr type-list) extension #'string=) (car type-list)
+	(mimetypes--find-in-list extension (cdr mime-list))))))
+
+(defun mimetypes--user-file-name ()
+  "Get the name of the mimetypes user file."
+  (cond ((eq system-type 'windows-nt) (expand-file-name ".mime.types" (getenv "USERPROFILE")))
+	((eq system-type 'ms-dos nil))
+	(t (expand-file-name ".mime.types" (getenv "HOME")))))
+
+(defun mimetypes-extension-to-mine (extension &optional extra-types)
+  "Guess a mimetype from EXTENSION.
+If EXTRA-TYPES is provided, that list takes precedent over
+system-provided mimetype mappings."
+  (let ((mime-type (or (mimetypes--find-in-list extension extra-types)
+		       (mimetypes--find-in-file extension (mimetypes--user-file-name)))))
+    (cond (mime-type mime-type)
+	  ((eq system-type 'windows-nt) (mimetypes--find-in-registry extension))
+	  ((eq system-type 'ms-dos) nil)
+	  ((eq system-type 'cygwin) nil)
+	  (t (mimetypes--find-in-file
+	      extension
+	      (mimetypes--first-known-file mimetypes-known-files))))))
+
+
+(mimetypes-extension-to-mine "txt")
 
 (provide 'mimetypes)
 
