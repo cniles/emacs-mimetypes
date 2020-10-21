@@ -47,6 +47,13 @@
     "/usr/local/etc/mime.types")
   "List of known mime.types file locations.")
 
+(defun mimetypes--first-known-file (files)
+  "Return the first file from a list of file names FILES that exists."
+  (if files
+      (let ((f-name (car files)))
+	(if (file-exists-p f-name) f-name
+	  (mimetypes--first-known-file (cdr files))))))
+
 (defun mimetypes--trim-extension (extension)
   "Remove period/whitespace from EXTENSION."
   (string-trim extension "[. \t\n\r]+"))

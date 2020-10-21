@@ -61,6 +61,13 @@
     (should (equal "baz" (mimetypes--find-in-buffer "qux")))
     (should (null (mimetypes--find-in-buffer "boo")))))
 
-(provide 'mimetypes-test)
+(ert-deftest test-find-in-file ()
+  (should (string= "text/plain"
+		   (mimetypes--find-in-file "txt" "test/one"))))
 
+(ert-deftest test-first-known-file ()
+  (should (string= "test/one" (mimetypes--first-known-file '("test/zero" "test/one" "test/two"))))
+  (should-not (mimetypes--first-known-file '("test/zero" "test/two"))))
+
+(provide 'mimetypes-test)
 ;;; mimetypes-test.el ends here
