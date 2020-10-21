@@ -116,7 +116,7 @@ Each element of MIME-LIST must be a list of strings of the form:
 	((eq system-type 'ms-dos nil))
 	(t (expand-file-name ".mime.types" (getenv "HOME")))))
 
-(defun mimetypes-extension-to-mine (extension &optional extra-types)
+(defun mimetypes-extension-to-mime (extension &optional extra-types)
   "Guess a mimetype from EXTENSION.
 If EXTRA-TYPES is provided, that list takes precedent over
 system-provided mimetype mappings."

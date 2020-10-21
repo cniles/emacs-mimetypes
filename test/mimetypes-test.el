@@ -83,7 +83,7 @@
   (cl-letf (((symbol-function 'mimetypes--user-file-name)
 	     (lambda () "one")))
     (should (string= "application/jpeg"
-		     (mimetypes-extension-to-mine "jpg")))))
+		     (mimetypes-extension-to-mime "jpg")))))
 
 (provide 'mimetypes-test)
 
