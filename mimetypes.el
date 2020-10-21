@@ -1,4 +1,4 @@
-;;; mimetypes.el --- Guess a file's mimetype by extension
+;;; mimetypes.el --- Guess a file's mimetype by extension -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2020 Craig Niles
 

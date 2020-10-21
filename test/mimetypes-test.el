@@ -1,4 +1,4 @@
-;;; mimetypes-test.el --- ERT Unit tests for mimetypes.el
+;;; mimetypes-test.el --- ERT Unit tests for mimetypes.el -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2020 Craig Niles
 
