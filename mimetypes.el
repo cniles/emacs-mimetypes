@@ -113,7 +113,7 @@ Each element of MIME-LIST must be a list of strings of the form:
 (defun mimetypes--user-file-name ()
   "Get the name of the mimetypes user file."
   (cond ((eq system-type 'windows-nt) (expand-file-name ".mime.types" (getenv "USERPROFILE")))
-	((eq system-type 'ms-dos nil))
+	((eq system-type 'ms-dos) nil)
 	(t (expand-file-name ".mime.types" (getenv "HOME")))))
 
 (defun mimetypes-extension-to-mime (extension &optional extra-types)
