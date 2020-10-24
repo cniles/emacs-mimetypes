@@ -47,7 +47,7 @@ For all other platforms, `$HOME/.mime.types` is searched.
 -> "image/jpeg"
 
 (mimetypes-extension-to-mime "txt")
--> "text/jpeg"
+-> "text/plain"
 
 (mimetypes-extension-to-mime "yaml" '(("application/yaml" "yml' "yaml")))
 -> "application/yaml"
