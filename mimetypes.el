@@ -56,7 +56,7 @@
 
 (defun mimetypes--trim-extension (extension)
   "Trim period and whitespace from EXTENSION."
-  (string-trim extension "[. \t\n\r]+"))
+  (replace-regexp-in-string "^[. \t\n\r]+" "" extension))
 
 (defun mimetypes--read-registry (key-name value-name)
   "Read KEY-NAME and VALUE-NAME from the Windows registry."
