@@ -47,6 +47,10 @@
     "/usr/local/etc/mime.types")
   "List of known mime.types file locations.")
 
+(defsubst mimetypes--nix-system-p ()
+  "Return 't' if the `system-type' is some kind of *nix system."
+  (not (seq-contains '(ms-dos windows-nt cygwin) system-type)))
+
 (defun mimetypes--first-known-file (files)
   "Return the first file from a list of file names FILES that exists."
   (if files
@@ -54,7 +58,7 @@
 	(if (file-exists-p f-name) f-name
 	  (mimetypes--first-known-file (cdr files))))))
 
-(defun mimetypes--trim-extension (extension)
+(defsubst mimetypes--trim-extension (extension)
   "Trim period and whitespace from EXTENSION."
   (replace-regexp-in-string "^[. \t\n\r]+" "" extension))
 
@@ -71,12 +75,12 @@
 	      (format "HKEY_LOCAL_MACHINE\\Software\\Classes\\.%s" (mimetypes--trim-extension extension))
 	      "Content Type"))))
 
-(defun mimetypes--ignored-line-p (line)
+(defsubst mimetypes--ignored-line-p (line)
   "Check if the mime.types line LINE is a comment or empty."
-  (setq line (string-trim line))
-  (not (null (or (string= line "") (string-match "^#" line)))))
+  (let ((line (string-trim line)))
+    (not (null (or (string= line "") (string-match "^#" line))))))
 
-(defun mimetypes--line-has-extension (line extension)
+(defsubst mimetypes--line-has-extension (line extension)
   "Check if mime.types line LINE has a MIME type for EXTENSION."
   (not (null (seq-contains (cdr (split-string line)) extension #'string=))))
 
@@ -131,5 +135,4 @@ system-provided mimetype mappings."
 	      (mimetypes--first-known-file mimetypes-known-files))))))
 
 (provide 'mimetypes)
-
 ;;; mimetypes.el ends here
