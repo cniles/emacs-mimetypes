@@ -120,10 +120,20 @@ Each element of MIME-LIST must be a list of strings of the form:
 	((eq system-type 'ms-dos) nil)
 	(t (expand-file-name ".mime.types" (getenv "HOME")))))
 
+(defun mimetypes--from-file-proc (file-name)
+  "Use the `file' command to determine MIME type FILE-NAME."
+  (if (and (executable-find "file") (file-exists-p file-name) (mimetypes--nix-system-p))
+      (with-temp-buffer
+	(call-process "file" nil t nil "-b" "--mime-type" file-name)
+	(let ((result (string-trim (buffer-string))))
+	  (if (string= "inode/x-empty" result) nil result)))))
+
 (defun mimetypes-extension-to-mime (extension &optional extra-types)
   "Guess a mimetype from EXTENSION.
 If EXTRA-TYPES is provided, that list takes precedent over
 system-provided mimetype mappings."
+  (if (not (stringp extension))
+      (signal 'wrong-type-argument '(stringp extension)))
   (let ((mime-type (or (mimetypes--find-in-list extension extra-types)
 		       (mimetypes--find-in-file extension (mimetypes--user-file-name)))))
     (cond (mime-type mime-type)
@@ -133,6 +143,38 @@ system-provided mimetype mappings."
 	  (t (mimetypes--find-in-file
 	      extension
 	      (mimetypes--first-known-file mimetypes-known-files))))))
+
+(defun mimetypes-guess-file-mime (file-name &optional extra-types)
+  "Guess MIME for a file named FILE-NAME.
+For *nix systems, this means first trying the 'file' command
+before falling back to guess by extension.
+
+A result of 'inode/x-empty' is interpreted to 'nil' and the
+response is delegated to `mimetypes-extension-to-mime'.
+
+If the result from 'file' is 'text/plain',
+`mimetypes-extension-to-mime' is attampted to get a more specific
+MIME.
+
+EXTRA-TYPES is passed on to `mimetypes-extension-to-mime' if it is called."
+  (let ((mime-from-file (mimetypes--from-file-proc file-name)))
+    (if (or (not mime-from-file) (string= "text/plain" mime-from-file))
+	(or (mimetypes-extension-to-mime (file-name-extension file-name) extra-types)
+	    mime-from-file)
+      mime-from-file)))
+
+(defun mimetypes-guess-buffer-mime (&optional extra-types)
+  "Guess MIME for the current buffer.
+If the current buffer has a visited file, delegates to
+`mimetypes-guess-file-mime'.  If not, calls
+`mimetypes-extension-to-mime' for the extension of the current
+buffer name.
+
+EXTRA-TYPES is passed to `mimetypes-extension-to-mime' if it is
+called."
+  (if buffer-file-name (mimetypes-guess-file-mime buffer-file-name)
+    (let ((extension (file-name-extension (buffer-name))))
+      (and extension (mimetypes-extension-to-mime (file-name-extension (buffer-name)) extra-types)))))
 
 (provide 'mimetypes)
 ;;; mimetypes.el ends here
