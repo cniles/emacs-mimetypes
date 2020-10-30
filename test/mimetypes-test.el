@@ -55,10 +55,11 @@
   (should (mimetypes--line-has-extension "foo bar baz" "baz")))
 
 (ert-deftest test-find-in-buffer ()
-  (with-temp-buffer
-    (insert "#####\n\nfoo bar\nbaz qux\n\n")
-    (should (equal "foo" (mimetypes--find-in-buffer "bar")))
-    (should (equal "baz" (mimetypes--find-in-buffer "qux")))
+  (with-current-buffer "*scratch*"
+    (erase-buffer)
+    (insert "#####\n text/foo a baz b\ntext/vnd.+bar-foo qux\n\n")
+    (should (string= "text/foo" (mimetypes--find-in-buffer "baz")))
+    (should (string= "text/vnd.+bar-foo" (mimetypes--find-in-buffer "qux")))
     (should (null (mimetypes--find-in-buffer "boo")))))
 
 (ert-deftest test-find-in-file ()

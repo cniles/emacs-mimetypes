@@ -51,6 +51,10 @@
   "Return 't' if the `system-type' is some kind of *nix system."
   (not (seq-contains '(ms-dos windows-nt cygwin) system-type)))
 
+(defvar mimetypes--file-re-format
+  "^\\s *\\(\\([Xx]-\\)?\\w+/\\([Xx]-\\)?[[:alnum:]+-.]+\\)\\(\\s +\\w+\\)*\\(\\s +\\(%s\\)\\)\\(\\s +\\w+\\)*\\s *$"
+  "Regular expression format for searching through mime.types file.")
+
 (defun mimetypes--first-known-file (files)
   "Return the first file from a list of file names FILES that exists."
   (if files
@@ -91,18 +95,11 @@
       (insert-file-contents-literally file-name)
       (mimetypes--find-in-buffer (downcase (mimetypes--trim-extension extension))))))
 
-(defun mimetypes--find-in-buffer (extension)
-  "Check for EXTENSION in mime.types file content in the current buffer."
+(defun mimetypes--find-in-buffer (ext)
+  "Find MIME type for EXT in current buffer, which should be a mime.types file."
   (save-excursion
     (goto-char (point-min))
-    (while
-	(let ((current-line
-	       (string-trim (buffer-substring-no-properties (line-beginning-position) (line-end-position)))))
-	  (if (< (point) (point-max))
-	      (or (mimetypes--ignored-line-p current-line)
-		  (not (mimetypes--line-has-extension current-line extension)))))
-      (forward-line))
-    (car (split-string (buffer-substring-no-properties (line-beginning-position) (line-end-position))))))
+    (if (re-search-forward (format mimetypes--file-re-format ext) nil t) (match-string 1))))
 
 (defun mimetypes--find-in-list (extension mime-list)
   "Find EXTENSION in list MIME-LIST.
