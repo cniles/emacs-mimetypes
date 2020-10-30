@@ -42,6 +42,8 @@ For all other platforms, `$HOME/.mime.types` is searched.
 
 ## Examples
 
+### Guess mimetype for a particular extension:
+
 ```
 (mimetypes-extension-to-mime ".jpg")
 -> "image/jpeg"
@@ -51,4 +53,25 @@ For all other platforms, `$HOME/.mime.types` is searched.
 
 (mimetypes-extension-to-mime "yaml" '(("application/yaml" "yml' "yaml")))
 -> "application/yaml"
+```
+
+### Guess mimetype for a file:
+
+Guess based on file name (or contents using `file` if a *nix system),
+falling back to extension in some cases.
+
+```
+(mimetypes-guess-file-mime "/path/to/foo.json")
+-> "application/json"
+```
+
+### Guess mimetype for a buffer:
+
+Guess based on buffer name or buffer file name if the buffer has a
+visited file.
+
+```
+(with-current-buffer "foo.json"
+  (mimetypes-guess-buffer-mime))
+-> "application/json"
 ```
