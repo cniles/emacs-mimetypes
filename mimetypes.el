@@ -51,7 +51,7 @@
   "Return 't' if the `system-type' is some kind of *nix system."
   (not (seq-contains '(ms-dos windows-nt cygwin) system-type)))
 
-(defvar mimetypes--file-re-format
+(defconst mimetypes--file-re-format
   "^\\s *\\(\\([Xx]-\\)?\\w+/\\([Xx]-\\)?[[:alnum:]+-.]+\\)\\(\\s +\\w+\\)*\\(\\s +\\(%s\\)\\)\\(\\s +\\w+\\)*\\s *$"
   "Regular expression format for searching through mime.types file.")
 
