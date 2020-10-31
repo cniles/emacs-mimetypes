@@ -79,14 +79,11 @@
 	      (format "HKEY_LOCAL_MACHINE\\Software\\Classes\\.%s" (mimetypes--trim-extension extension))
 	      "Content Type"))))
 
-(defsubst mimetypes--ignored-line-p (line)
-  "Check if the mime.types line LINE is a comment or empty."
-  (let ((line (string-trim line)))
-    (not (null (or (string= line "") (string-match "^#" line))))))
-
-(defsubst mimetypes--line-has-extension (line extension)
-  "Check if mime.types line LINE has a MIME type for EXTENSION."
-  (not (null (seq-contains (cdr (split-string line)) extension #'string=))))
+(defun mimetypes--find-in-buffer (ext)
+  "Find MIME type for EXT in current buffer, which should be a mime.types file."
+  (save-excursion
+    (goto-char (point-min))
+    (when (re-search-forward (format mimetypes--file-re-format ext) nil t) (match-string 1))))
 
 (defun mimetypes--find-in-file (extension file-name)
   "Check for EXTENSION in mime.types file FILE-NAME."
@@ -94,12 +91,6 @@
     (with-temp-buffer
       (insert-file-contents-literally file-name)
       (mimetypes--find-in-buffer (downcase (mimetypes--trim-extension extension))))))
-
-(defun mimetypes--find-in-buffer (ext)
-  "Find MIME type for EXT in current buffer, which should be a mime.types file."
-  (save-excursion
-    (goto-char (point-min))
-    (if (re-search-forward (format mimetypes--file-re-format ext) nil t) (match-string 1))))
 
 (defun mimetypes--find-in-list (extension mime-list)
   "Find EXTENSION in list MIME-LIST.
