@@ -47,10 +47,6 @@
     "/usr/local/etc/mime.types")
   "List of known mime.types file locations.")
 
-(defsubst mimetypes--nix-system-p ()
-  "Return 't' if the `system-type' is some kind of *nix system."
-  (not (seq-contains '(ms-dos windows-nt cygwin) system-type)))
-
 (defconst mimetypes--file-re-format
   "^\\s *\\(\\([Xx]-\\)?\\w+/\\([Xx]-\\)?[[:alnum:]+-.]+\\)\\(\\s +\\w+\\)*\\(\\s +\\(%s\\)\\)\\(\\s +\\w+\\)*\\s *$"
   "Regular expression format for searching through mime.types file.")
@@ -110,11 +106,13 @@ Each element of MIME-LIST must be a list of strings of the form:
 
 (defun mimetypes--from-file-proc (file-name)
   "Use the `file' command to determine MIME type FILE-NAME."
-  (if (and (executable-find "file") (file-exists-p file-name) (mimetypes--nix-system-p))
-      (with-temp-buffer
-	(call-process "file" nil t nil "-b" "--mime-type" file-name)
-	(let ((result (string-trim (buffer-string))))
-	  (if (string= "inode/x-empty" result) nil result)))))
+  (when (and (executable-find "file")
+	     (file-exists-p file-name)
+	     (not (seq-contains '(ms-dos windows-nt cygwin) system-type)))
+    (with-temp-buffer
+      (call-process "file" nil t nil "-b" "--mime-type" file-name)
+      (let ((result (string-trim (buffer-string))))
+	(unless (string= "inode/x-empty" result) result)))))
 
 (defun mimetypes-extension-to-mime (extension &optional extra-types)
   "Guess a mimetype from EXTENSION.
