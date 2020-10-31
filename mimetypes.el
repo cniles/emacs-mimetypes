@@ -53,10 +53,10 @@
 
 (defun mimetypes--first-known-file (files)
   "Return the first file from a list of file names FILES that exists."
-  (if files
-      (let ((f-name (car files)))
-	(if (file-exists-p f-name) f-name
-	  (mimetypes--first-known-file (cdr files))))))
+  (when files
+    (let ((f-name (car files)))
+      (if (file-exists-p f-name) f-name
+	(mimetypes--first-known-file (cdr files))))))
 
 (defsubst mimetypes--trim-extension (extension)
   "Trim period and whitespace from EXTENSION."
@@ -66,8 +66,7 @@
   "Read KEY-NAME and VALUE-NAME from the Windows registry."
   (with-temp-buffer
     (let ((result (call-process "reg.exe" nil t nil "query" key-name "/v" value-name)))
-      (if (equal 0 result) (split-string (buffer-string))
-	nil))))
+      (when (zerop result) (split-string (buffer-string))))))
 
 (defun mimetypes--find-in-registry (extension)
   "Search the registry for a MIME type for EXTENSION."
@@ -118,8 +117,7 @@ Each element of MIME-LIST must be a list of strings of the form:
   "Guess a mimetype from EXTENSION.
 If EXTRA-TYPES is provided, that list takes precedent over
 system-provided mimetype mappings."
-  (if (not (stringp extension))
-      (signal 'wrong-type-argument '(stringp extension)))
+  (unless (stringp extension) (signal 'wrong-type-argument '(stringp extension)))
   (let ((mime-type (or (mimetypes--find-in-list extension extra-types)
 		       (mimetypes--find-in-file extension (mimetypes--user-file-name)))))
     (cond (mime-type mime-type)
