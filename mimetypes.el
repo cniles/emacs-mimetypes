@@ -103,14 +103,27 @@ Each element of MIME-LIST must be a list of strings of the form:
 	((eq system-type 'ms-dos) nil)
 	(t (expand-file-name ".mime.types" (getenv "HOME")))))
 
-(defun mimetypes--from-file-proc (file-name)
-  "Use the `file' command to determine MIME type FILE-NAME."
+(defun mimetypes--from-file-proc (target)
+  "Use the `file' command to determine MIME type for TARGET.
+
+Target can be a buffer or file name.  If a buffer, then its
+contents are provided to `file' through standard input.
+Otherwise, the name of the file is provided.  It is an error to
+provide a file name that does not exist."
+  (cl-assert (or (bufferp target) (and (stringp target) (file-exists-p target)))
+	     t "target must be a buffer or file that exists")
   (when (and (executable-find "file")
-	     (file-exists-p file-name)
 	     (not (seq-contains '(ms-dos windows-nt cygwin) system-type)))
-    (with-temp-buffer
-      (call-process "file" nil t nil "-b" "--mime-type" file-name)
-      (let ((result (string-trim (buffer-string))))
+    (let* ((output-buffer (generate-new-buffer "*temp*"))
+	   (file-target (and (stringp target) (file-exists-p target)))
+	   (proc-fn (if file-target #'call-process #'call-process-region)))
+      (let ((args (append
+		   (unless file-target (list nil nil))
+		   (list "file" nil output-buffer nil "-b" "--mime-type")
+		   (list (if file-target target "-")))))
+	(with-current-buffer (if (bufferp target) target (current-buffer))
+	  (apply proc-fn args)))
+      (let ((result (string-trim (with-current-buffer output-buffer (buffer-string)))))
 	(unless (string= "inode/x-empty" result) result)))))
 
 (defun mimetypes-extension-to-mime (extension &optional extra-types)
@@ -128,37 +141,17 @@ system-provided mimetype mappings."
 	      extension
 	      (mimetypes--first-known-file mimetypes-known-files))))))
 
-(defun mimetypes-guess-file-mime (file-name &optional extra-types)
-  "Guess MIME for a file named FILE-NAME.
-For *nix systems, this means first trying the 'file' command
-before falling back to guess by extension.
-
-A result of 'inode/x-empty' is interpreted to 'nil' and the
-response is delegated to `mimetypes-extension-to-mime'.
-
-If the result from 'file' is 'text/plain',
-`mimetypes-extension-to-mime' is attampted to get a more specific
-MIME.
-
-EXTRA-TYPES is passed on to `mimetypes-extension-to-mime' if it is called."
-  (let ((mime-from-file (mimetypes--from-file-proc file-name)))
+(defun mimetypes-guess-mime (target &optional extra-types)
+  "Guess a MIME type FILE-NAME.
+Uses `file' executable if it is available, falling back to
+guessing by extension if the result is 'text/plain' or
+'inode/x-empty.  If `mimetypes-extension-to-mime' is called,
+EXTRA-TYPES is provided to it."
+  (let ((mime-from-file (mimetypes--from-file-proc target)))
     (if (or (not mime-from-file) (string= "text/plain" mime-from-file))
-	(or (mimetypes-extension-to-mime (file-name-extension file-name) extra-types)
+	(or (mimetypes-extension-to-mime (file-name-extension target) extra-types)
 	    mime-from-file)
       mime-from-file)))
-
-(defun mimetypes-guess-buffer-mime (&optional extra-types)
-  "Guess MIME for the current buffer.
-If the current buffer has a visited file, delegates to
-`mimetypes-guess-file-mime'.  If not, calls
-`mimetypes-extension-to-mime' for the extension of the current
-buffer name.
-
-EXTRA-TYPES is passed to `mimetypes-extension-to-mime' if it is
-called."
-  (if buffer-file-name (mimetypes-guess-file-mime buffer-file-name)
-    (let ((extension (file-name-extension (buffer-name))))
-      (and extension (mimetypes-extension-to-mime (file-name-extension (buffer-name)) extra-types)))))
 
 (provide 'mimetypes)
 ;;; mimetypes.el ends here

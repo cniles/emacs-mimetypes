@@ -33,27 +33,6 @@
   (should (string= "jpg" (mimetypes--trim-extension ".jpg")))
   (should (string= "jpg" (mimetypes--trim-extension "jpg"))))
 
-(ert-deftest test-ignore-line-p-1 ()
-  (should (mimetypes--ignored-line-p " ")))
-
-(ert-deftest test-ignore-line-p-2 ()
-  (should (mimetypes--ignored-line-p "\n")))
-
-(ert-deftest test-ignore-line-p-3 ()
-  (should (mimetypes--ignored-line-p "# foo \n")))
-
-(ert-deftest test-ignore-line-p-4 ()
-  (should-not (mimetypes--ignored-line-p "foo bar")))
-
-(ert-deftest test-line-has-extension-1 ()
-  (should (mimetypes--line-has-extension "foo foo" "foo")))
-
-(ert-deftest test-line-has-extension-2 ()
-  (should-not (mimetypes--line-has-extension "foo" "foo")))
-
-(ert-deftest test-line-has-extension-3 ()
-  (should (mimetypes--line-has-extension "foo bar baz" "baz")))
-
 (ert-deftest test-find-in-buffer ()
   (with-temp-buffer
     (insert "#####\n text/foo a baz b\ntext/vnd.+bar-foo qux\n\n")
