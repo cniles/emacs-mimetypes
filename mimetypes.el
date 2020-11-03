@@ -177,7 +177,7 @@ found in EXTRA-TYPES it will be returned."
 	  (if (or (not mime-from-file) (string= "text/plain" mime-from-file))
 	      (or (mimetypes-extension-to-mime extension)
 		  mime-from-file)
-	 mime-from-file)))))
+	    mime-from-file)))))
 
 (provide 'mimetypes)
 ;;; mimetypes.el ends here
