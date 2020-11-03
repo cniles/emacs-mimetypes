@@ -61,9 +61,35 @@
 (ert-deftest test-find-in-user-file ()
   (cl-letf (((symbol-function 'mimetypes--user-file-name)
 	     (lambda () "one")))
-    (should (string= "application/jpeg"
+    (should (string= "image/jpeg"
 		     (mimetypes-extension-to-mime "jpg")))))
 
-(provide 'mimetypes-test)
+(ert-deftest test-guess-mime ()
+  ;; extension target
+  (let ((mimetypes-known-files '("one")))
+    (should (string= "not/real" (mimetypes-guess-mime "foo"))))
 
+  ;; file name no file proc
+  (let ((mimetypes-bypass-file-proc t)
+	(mimetypes-known-files '("one")))
+    (should (string= "image/jpeg" (mimetypes-guess-mime "foo.jpg")))
+    (should (eq nil (mimetypes-guess-mime "mimetypes-test.el"))))
+
+  ;; file name
+  (should (string= "text/x-lisp" (mimetypes-guess-mime "mimetypes-test.el")))
+
+  ;; buffer target w/ file
+  (let ((mimetypes-known-files '("one")))
+    (with-current-buffer (get-buffer-create "test.foo")
+      (setq buffer-file-name "test.bar")
+      (should (string= "not/real" (mimetypes-guess-mime (current-buffer))))
+      (kill-buffer-if-not-modified (current-buffer))))
+
+  ;; buffer target w/o file
+  (let ((mimetypes-known-files '("one")))
+    (with-current-buffer (get-buffer-create "test.foo")
+      (should (string= "not/real" (mimetypes-guess-mime (current-buffer))))
+      (kill-buffer-if-not-modified (current-buffer)))))
+
+(provide 'mimetypes-test)
 ;;; mimetypes-test.el ends here

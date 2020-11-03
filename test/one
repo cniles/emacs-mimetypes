@@ -1,4 +1,5 @@
 ################################################################################
 
-application/jpeg	jpg jpeg
+image/jpeg		jpg jpeg
 text/plain	 	txt md
+not/real		foo bar

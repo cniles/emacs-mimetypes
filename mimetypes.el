@@ -32,8 +32,12 @@
 
 ;;; Code:
 
+(require 'cl-lib)
 (require 'seq)
 (require 'subr-x)
+
+(defvar mimetypes-bypass-file-proc nil
+  "If non-nil, bypasses  using `file' command to guess MIME type.")
 
 (defvar mimetypes-known-files
   '("/etc/mime.types"
@@ -115,24 +119,24 @@ provide a file name that does not exist."
   (when (and (executable-find "file")
 	     (not (seq-contains '(ms-dos windows-nt cygwin) system-type)))
     (let* ((output-buffer (generate-new-buffer "*temp*"))
-	   (file-target (and (stringp target) (file-exists-p target)))
+	   (file-name (if (bufferp target) (or (buffer-file-name target) (buffer-name target)) target))
+	   (file-target (and (stringp file-name) (file-exists-p file-name)))
 	   (proc-fn (if file-target #'call-process #'call-process-region)))
       (let ((args (append
 		   (unless file-target (list nil nil))
 		   (list "file" nil output-buffer nil "-b" "--mime-type")
-		   (list (if file-target target "-")))))
+		   (list (if file-target file-name "-")))))
 	(with-current-buffer (if (bufferp target) target (current-buffer))
 	  (apply proc-fn args)))
       (let ((result (string-trim (with-current-buffer output-buffer (buffer-string)))))
 	(unless (string= "inode/x-empty" result) result)))))
 
-(defun mimetypes-extension-to-mime (extension &optional extra-types)
+(defun mimetypes-extension-to-mime (extension)
   "Guess a mimetype from EXTENSION.
 If EXTRA-TYPES is provided, that list takes precedent over
-system-provided mimetype mappings."
+system-provided mimetype mappings or user file mappings."
   (unless (stringp extension) (signal 'wrong-type-argument '(stringp extension)))
-  (let ((mime-type (or (mimetypes--find-in-list extension extra-types)
-		       (mimetypes--find-in-file extension (mimetypes--user-file-name)))))
+  (let ((mime-type (mimetypes--find-in-file extension (mimetypes--user-file-name))))
     (cond (mime-type mime-type)
 	  ((eq system-type 'windows-nt) (mimetypes--find-in-registry extension))
 	  ((eq system-type 'ms-dos) nil)
@@ -142,16 +146,35 @@ system-provided mimetype mappings."
 	      (mimetypes--first-known-file mimetypes-known-files))))))
 
 (defun mimetypes-guess-mime (target &optional extra-types)
-  "Guess a MIME type FILE-NAME.
-Uses `file' executable if it is available, falling back to
-guessing by extension if the result is 'text/plain' or
-'inode/x-empty.  If `mimetypes-extension-to-mime' is called,
-EXTRA-TYPES is provided to it."
-  (let ((mime-from-file (mimetypes--from-file-proc target)))
-    (if (or (not mime-from-file) (string= "text/plain" mime-from-file))
-	(or (mimetypes-extension-to-mime (file-name-extension target) extra-types)
-	    mime-from-file)
-      mime-from-file)))
+  "Guess a MIME type TARGET, which can be a buffer or string.
+
+For buffers, an attempt will be made to get the MIME type with
+the `file' command if it is available.  If the buffer has a
+visited file the file name will specified as an argument to the
+`file' command, otherwise the buffer's contents will be passed
+through standard input.  If this check returns 'nil' or
+'text/plain' a check is made for the MIME type by extension.
+
+If TARGET is a string it is assumed to either be a file name or
+an extension.  If a file by the name TARGET exists, a check is
+made with the `file' command.  If this returns nil or
+'text/plain' then check is made with the extension derived from
+TARGET or TARGET itself.
+
+If EXTRA-TYPES is provided, it takes priority over other guessing
+mechanism.  If the extension derived from the buffer or string is
+found in EXTRA-TYPES it will be returned."
+  (let* ((file-name (if (bufferp target) (or (buffer-file-name target) (buffer-name target)) target))
+	 (extension (or (file-name-extension file-name) file-name)))
+    (or (mimetypes--find-in-list extension extra-types)
+	(let ((mime-from-file (and (null mimetypes-bypass-file-proc)
+				   (or (file-exists-p file-name)
+				       (bufferp target))
+				   (mimetypes--from-file-proc target))))
+	  (if (or (not mime-from-file) (string= "text/plain" mime-from-file))
+	      (or (mimetypes-extension-to-mime extension)
+		  mime-from-file)
+	 mime-from-file)))))
 
 (provide 'mimetypes)
 ;;; mimetypes.el ends here
