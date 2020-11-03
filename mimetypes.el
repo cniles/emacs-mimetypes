@@ -131,12 +131,13 @@ provide a file name that does not exist."
       (let ((result (string-trim (with-current-buffer output-buffer (buffer-string)))))
 	(unless (string= "inode/x-empty" result) result)))))
 
-(defun mimetypes-extension-to-mime (extension)
+(defun mimetypes-extension-to-mime (extension &optional extra-types)
   "Guess a mimetype from EXTENSION.
 If EXTRA-TYPES is provided, that list takes precedent over
 system-provided mimetype mappings or user file mappings."
   (unless (stringp extension) (signal 'wrong-type-argument '(stringp extension)))
-  (let ((mime-type (mimetypes--find-in-file extension (mimetypes--user-file-name))))
+  (let ((mime-type (or (mimetypes--find-in-list extension extra-types)
+		       (mimetypes--find-in-file extension (mimetypes--user-file-name)))))
     (cond (mime-type mime-type)
 	  ((eq system-type 'windows-nt) (mimetypes--find-in-registry extension))
 	  ((eq system-type 'ms-dos) nil)
