@@ -127,7 +127,9 @@ provide a file name that does not exist."
 	(with-current-buffer (if (bufferp target) target (current-buffer))
 	  (apply proc-fn args)))
       (let ((result (string-trim (with-current-buffer output-buffer (buffer-string)))))
-	(unless (string= "inode/x-empty" result) result)))))
+	(unless (or (string= "inode/x-empty" result)
+		    (string= "application/x-empty" result))
+	  result)))))
 
 (defun mimetypes-extension-to-mime (extension &optional extra-types)
   "Guess a mimetype from EXTENSION.
