@@ -82,7 +82,7 @@
   "Find MIME type for EXT in current buffer, which should be a mime.types file."
   (save-excursion
     (goto-char (point-min))
-    (when (re-search-forward (format mimetypes--file-re-format ext) nil t) (match-string 1))))
+    (when (re-search-forward (format mimetypes--file-re-format (regexp-quote ext)) nil t) (match-string 1))))
 
 (defun mimetypes--find-in-file (extension file-name)
   "Check for EXTENSION in mime.types file FILE-NAME."
