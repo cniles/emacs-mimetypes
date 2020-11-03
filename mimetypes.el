@@ -114,8 +114,6 @@ Target can be a buffer or file name.  If a buffer, then its
 contents are provided to `file' through standard input.
 Otherwise, the name of the file is provided.  It is an error to
 provide a file name that does not exist."
-  (cl-assert (or (bufferp target) (and (stringp target) (file-exists-p target)))
-	     t "target must be a buffer or file that exists")
   (when (and (executable-find "file")
 	     (not (seq-contains '(ms-dos windows-nt cygwin) system-type)))
     (let* ((output-buffer (generate-new-buffer "*temp*"))
@@ -165,6 +163,8 @@ TARGET or TARGET itself.
 If EXTRA-TYPES is provided, it takes priority over other guessing
 mechanism.  If the extension derived from the buffer or string is
 found in EXTRA-TYPES it will be returned."
+  (cl-assert (or (bufferp target) (stringp target))
+	     t "target must be a buffer or file that exists")
   (let* ((file-name (if (bufferp target) (or (buffer-file-name target) (buffer-name target)) target))
 	 (extension (or (file-name-extension file-name) file-name)))
     (or (mimetypes--find-in-list extension extra-types)
