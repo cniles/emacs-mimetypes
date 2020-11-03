@@ -42,36 +42,42 @@ For all other platforms, `$HOME/.mime.types` is searched.
 
 ## Examples
 
-### Guess mimetype for a particular extension:
-
-```
-(mimetypes-extension-to-mime ".jpg")
--> "image/jpeg"
-
-(mimetypes-extension-to-mime "txt")
--> "text/plain"
-
-(mimetypes-extension-to-mime "yaml" '(("application/yaml" "yml' "yaml")))
--> "application/yaml"
-```
-
 ### Guess mimetype for a file:
 
-Guess based on file name (or contents using `file` if a *nix system),
-falling back to extension in some cases.
+Guess a MIME type TARGET, which can be a buffer or string.
+
+For buffers, an attempt will be made to get the MIME type with
+the `file' command if it is available.  If the buffer has a
+visited file the file name will specified as an argument to the
+`file' command, otherwise the buffer's contents will be passed
+through standard input.  If this check returns 'nil' or
+'text/plain' a check is made for the MIME type by extension.
+
+If TARGET is a string it is assumed to either be a file name or
+an extension.  If a file by the name TARGET exists, a check is
+made with the `file' command.  If this returns nil or
+'text/plain' then check is made with the extension derived from
+TARGET or TARGET itself.
+
+If EXTRA-TYPES is provided, it takes priority over other guessing
+mechanism.  If the extension derived from the buffer or string is
+found in EXTRA-TYPES it will be returned.
 
 ```
-(mimetypes-guess-file-mime "/path/to/foo.json")
+(mimetypes-guess-mime "/path/to/foo.json")
 -> "application/json"
 ```
 
-### Guess mimetype for a buffer:
+```
+(mimetypes-guess-mime (get-buffer "foo.json"))
+-> "application/json"
+```
 
-Guess based on buffer name or buffer file name if the buffer has a
-visited file.
+To skip checking with the `file` process, set the variable
+`mimetypes-bypass-file-proc` to non-nil:
 
 ```
-(with-current-buffer "foo.json"
-  (mimetypes-guess-buffer-mime))
+(let ((mimetypes-bypass-file-proc t))
+  (mimetypes-guess-mime "jpg"))
 -> "application/json"
 ```
