@@ -142,9 +142,8 @@ system-provided mimetype mappings or user file mappings."
 	  ((eq system-type 'windows-nt) (mimetypes--find-in-registry extension))
 	  ((eq system-type 'ms-dos) nil)
 	  ((eq system-type 'cygwin) nil)
-	  (t (mimetypes--find-in-file
-	      extension
-	      (mimetypes--first-known-file mimetypes-known-files))))))
+	  (t (let ((mime-types-file (mimetypes--first-known-file mimetypes-known-files)))
+	       (when mime-types-file (mimetypes--find-in-file extension mime-types-file)))))))
 
 (defun mimetypes-guess-mime (target &optional extra-types)
   "Guess a MIME type TARGET, which can be a buffer or string.
