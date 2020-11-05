@@ -170,6 +170,7 @@ found in EXTRA-TYPES it will be returned."
 	 (extension (or (file-name-extension file-name) file-name)))
     (or (mimetypes--find-in-list extension extra-types)
 	(let ((mime-from-file (when (and (null mimetypes-bypass-file-proc)
+					 (not (seq-contains '(windows-nt ms-dos cygwin) system-type))
 					 (or (file-exists-p file-name) (bufferp target)))
 				(mimetypes--from-file-proc target))))
 	  (if (or (not mime-from-file) (string= "text/plain" mime-from-file))

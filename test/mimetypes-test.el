@@ -65,31 +65,30 @@
 		     (mimetypes-extension-to-mime "jpg")))))
 
 (ert-deftest test-guess-mime ()
-  ;; extension target
-  (let ((mimetypes-known-files '("one")))
-    (should (string= "not/real" (mimetypes-guess-mime "foo"))))
+  (cl-letf (((symbol-function 'mimetypes-extension-to-mime)
+	     (lambda (ext) (when (stringp ext) (format "ext/%s" ext))))
+	    ((symbol-function 'mimetypes--from-file-proc)
+	     (lambda (fname)
+	       (unless (stringp fname) (setq fname (or buffer-file-name (buffer-name))))
+	       (format "fileproc/%s" (or (file-name-extension fname) fname)))))
 
-  ;; file name no file proc
-  (let ((mimetypes-bypass-file-proc t)
-	(mimetypes-known-files '("one")))
-    (should (string= "image/jpeg" (mimetypes-guess-mime "foo.jpg")))
-    (should (eq nil (mimetypes-guess-mime "mimetypes-test.el"))))
+    (with-current-buffer (get-buffer-create "test.ext")
 
-  ;; file name
-  (should (string= "text/x-lisp" (mimetypes-guess-mime "mimetypes-test.el")))
+      (let ((system-type 'windows-nt))
+	(should (string= "ext/ext" (mimetypes-guess-mime (current-buffer))))
+	(let ((buffer-file-name "temptest.ext2"))
+	  (should (string= "ext/ext2" (mimetypes-guess-mime (current-buffer)))))
+	(should (string= "ext/custom" (mimetypes-guess-mime "ext" '(("ext/custom" "ext")))))
+	(should (string= "ext/ext" (mimetypes-guess-mime "ext")))
+	(should (string= "ext/ext" (mimetypes-guess-mime "file.ext"))))
 
-  ;; buffer target w/ file
-  (let ((mimetypes-known-files '("one")))
-    (with-current-buffer (get-buffer-create "test.foo")
-      (setq buffer-file-name "test.bar")
-      (should (string= "not/real" (mimetypes-guess-mime (current-buffer))))
-      (kill-buffer-if-not-modified (current-buffer))))
-
-  ;; buffer target w/o file
-  (let ((mimetypes-known-files '("one")))
-    (with-current-buffer (get-buffer-create "test.foo")
-      (should (string= "not/real" (mimetypes-guess-mime (current-buffer))))
-      (kill-buffer-if-not-modified (current-buffer)))))
+      (let ((system-type 'nix))
+	(should (string= "fileproc/ext" (mimetypes-guess-mime (current-buffer))))
+	(let ((buffer-file-name "tempteest.ext2"))
+	  (should (string= "fileproc/ext2" (mimetypes-guess-mime (current-buffer)))))
+	(should (string= "ext/custom" (mimetypes-guess-mime "ext" '(("ext/custom" "ext")))))
+	(should (string= "ext/ext" (mimetypes-guess-mime "ext")))
+	(should (string= "ext/ext" (mimetypes-guess-mime "file.ext")))))))
 
 (provide 'mimetypes-test)
 ;;; mimetypes-test.el ends here
