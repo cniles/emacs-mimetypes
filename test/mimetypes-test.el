@@ -40,13 +40,27 @@
     (should (string= "text/vnd.+bar-foo" (mimetypes--find-in-buffer "qux")))
     (should (null (mimetypes--find-in-buffer "boo")))))
 
+(defmacro with-temp-mimetypes-file (&rest body)
+  "Run BODY with access to a temporary mime.types file."
+  `(let ((temp-mime-types (make-temp-file "mime.types")))
+     (with-temp-file temp-mime-types
+       (insert "################\n")
+       (insert "\n")
+       (insert "image/jpeg		jpg jpeg\n")
+       (insert "text/plain	 	txt md\n")
+       (insert "not/real		foo bar\n"))
+     (unwind-protect (progn ,@body)
+       (delete-file temp-mime-types))))
+
 (ert-deftest test-find-in-file ()
-  (should (string= "text/plain"
-		   (mimetypes--find-in-file "txt" "one"))))
+  (with-temp-mimetypes-file
+   (should (string= "text/plain"
+		    (mimetypes--find-in-file "txt" temp-mime-types)))))
 
 (ert-deftest test-first-known-file ()
-  (should (string= "one" (mimetypes--first-known-file '("zero" "one" "two"))))
-  (should-not (mimetypes--first-known-file '("zero" "two"))))
+  (with-temp-mimetypes-file
+   (should (string= temp-mime-types (mimetypes--first-known-file `("zero" ,temp-mime-types "two"))))
+   (should-not (mimetypes--first-known-file '("zero" "two")))))
 
 (ert-deftest test-find-in-list ()
   (let ((mime-list '(("plain/foo" "foo" "f")
@@ -59,10 +73,11 @@
     (should-not (mimetypes--find-in-list "baz" mime-list))))
 
 (ert-deftest test-find-in-user-file ()
-  (cl-letf (((symbol-function 'mimetypes--user-file-name)
-	     (lambda () "one")))
-    (should (string= "image/jpeg"
-		     (mimetypes-extension-to-mime "jpg")))))
+  (with-temp-mimetypes-file
+   (cl-letf (((symbol-function 'mimetypes--user-file-name)
+	      (lambda () temp-mime-types)))
+     (should (string= "image/jpeg"
+		      (mimetypes-extension-to-mime "jpg"))))))
 
 (ert-deftest test-guess-mime ()
   (cl-letf (((symbol-function 'mimetypes-extension-to-mime)
