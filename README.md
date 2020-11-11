@@ -1,3 +1,5 @@
+[![MELPA](https://melpa.org/packages/mimetypes-badge.svg)](https://melpa.org/#/mimetypes)
+
 # mimetypes.el -- an elisp library for guessing mimetypes
 
 Uses platform-dependent configurations for guessing the MIME type of a
