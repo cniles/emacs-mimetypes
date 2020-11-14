@@ -41,6 +41,7 @@
 
 (defvar mimetypes-known-files
   '("/etc/mime.types"
+    "/usr/share/misc/mime.types"
     "/etc/httpd/mime.types"
     "/etc/httpd/conf/mime.types"
     "/etc/apache/mime.types"
